@@ -1,0 +1,58 @@
+project:
+  name: airflow-aks
+
+deployments:
+  default:
+    executor: KubernetesExecutor
+    namespace: airflow
+    serviceAccountName: airflow-sa
+    image: weatheracrname.azurecr.io/airflow:latest
+    resources:
+      limits:
+        cpu: "2"
+        memory: "4Gi"
+      requests:
+        cpu: "500m"
+        memory: "2Gi"
+
+services:
+  webserver:
+    ports:
+      - "8090:8080"  # Change Airflow webserver port mapping
+
+  scheduler:
+    replicas: 2
+
+  triggerer:
+    replicas: 1
+
+  database:
+    type: postgres
+    host: postgres
+    port: 5432
+    username: airflow
+    password: airflow
+    database: airflow
+
+env:
+  - name: AIRFLOW__CORE__EXECUTOR
+    value: KubernetesExecutor
+  - name: AIRFLOW__KUBERNETES__NAMESPACE
+    value: airflow
+  - name: AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY
+    value: weatheracrname.azurecr.io/airflow
+  - name: AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG
+    value: latest
+  - name: AIRFLOW__KUBERNETES__SERVICE_ACCOUNT_NAME
+    value: airflow-sa
+  - name: AIRFLOW__KUBERNETES__DAGS_IN_IMAGE
+    value: "True"
+
+volumes:
+  dags:
+    hostPath: ./dags
+  logs:
+    hostPath: ./logs
+  plugins:
+    hostPath: ./plugins
+
